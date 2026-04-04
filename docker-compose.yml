@@ -1,0 +1,40 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:16
+    container_name: infracare-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: infracare
+      POSTGRES_USER: infracare
+      POSTGRES_PASSWORD: infracare
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: postgresql://infracare:infracare@postgres:5432/infracare?schema=public
+      JWT_SECRET: super-secret-change-me
+      PORT: 3001
+      CORS_ORIGIN: http://localhost:3000
+    depends_on:
+      - postgres
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
