@@ -1,0 +1,332 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleName {
+  ADMIN
+  ANALYST
+  TECHNICIAN
+  MANAGER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum AssetStatus {
+  ONLINE
+  OFFLINE
+  UNSTABLE
+  MAINTENANCE
+}
+
+enum Criticality {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IncidentStatus {
+  OPEN
+  ANALYSIS
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ChecklistPeriodicity {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum ChecklistExecutionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+enum ChecklistItemResult {
+  COMPLIANT
+  NON_COMPLIANT
+  NOT_APPLICABLE
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_USER
+  ESCALATED
+  RESOLVED
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model Role {
+  id    String   @id @default(cuid())
+  name  RoleName @unique
+  users User[]
+}
+
+model Unit {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  users     User[]
+  sectors   Sector[]
+  assets    Asset[]
+  incidents Incident[]
+  checklists ChecklistExecution[]
+  tickets   Ticket[]
+}
+
+model Sector {
+  id       String @id @default(cuid())
+  name     String
+  unitId   String
+  unit     Unit   @relation(fields: [unitId], references: [id])
+  assets   Asset[]
+  incidents Incident[]
+  checklists ChecklistExecution[]
+  tickets  Ticket[]
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  status       UserStatus @default(ACTIVE)
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id])
+  unitId       String?
+  unit         Unit?      @relation(fields: [unitId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  incidentAssignments Incident[] @relation("IncidentResponsible")
+  checklistExecutions ChecklistExecution[]
+  ticketAssignments Ticket[] @relation("TicketTechnician")
+  auditLogs    AuditLog[]
+}
+
+model Asset {
+  id                String      @id @default(cuid())
+  name              String
+  type              String
+  category          String
+  hostname          String
+  ip                String
+  location          String
+  unitId            String
+  sectorId          String
+  description       String?
+  currentStatus     AssetStatus @default(ONLINE)
+  criticality       Criticality @default(MEDIUM)
+  monitoringMethod  String
+  checkIntervalMin  Int
+  lastCheckAt       DateTime?
+  observation       String?
+  unit              Unit        @relation(fields: [unitId], references: [id])
+  sector            Sector      @relation(fields: [sectorId], references: [id])
+  statusHistory     AssetStatusHistory[]
+  incidents         Incident[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+model AssetStatusHistory {
+  id        String      @id @default(cuid())
+  assetId   String
+  fromStatus AssetStatus
+  toStatus  AssetStatus
+  reason    String?
+  createdAt DateTime    @default(now())
+  asset     Asset       @relation(fields: [assetId], references: [id])
+}
+
+model Incident {
+  id             String         @id @default(cuid())
+  title          String
+  description    String
+  type           String
+  severity       Severity
+  impact         String
+  origin         String
+  assetId        String?
+  sectorId       String
+  unitId         String
+  status         IncidentStatus @default(OPEN)
+  responsibleId  String?
+  openedAt       DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  resolvedAt     DateTime?
+  rootCause      String?
+  correctiveAction String?
+  notes          String?
+  asset          Asset?         @relation(fields: [assetId], references: [id])
+  sector         Sector         @relation(fields: [sectorId], references: [id])
+  unit           Unit           @relation(fields: [unitId], references: [id])
+  responsible    User?          @relation("IncidentResponsible", fields: [responsibleId], references: [id])
+  timeline       IncidentTimeline[]
+}
+
+model IncidentTimeline {
+  id         String   @id @default(cuid())
+  incidentId String
+  action     String
+  description String
+  createdAt  DateTime @default(now())
+  incident   Incident @relation(fields: [incidentId], references: [id])
+}
+
+model ChecklistTemplate {
+  id          String @id @default(cuid())
+  title       String
+  category    String
+  periodicity ChecklistPeriodicity
+  items       ChecklistTemplateItem[]
+}
+
+model ChecklistTemplateItem {
+  id          String @id @default(cuid())
+  templateId  String
+  label       String
+  critical    Boolean @default(false)
+  template    ChecklistTemplate @relation(fields: [templateId], references: [id])
+}
+
+model ChecklistExecution {
+  id            String @id @default(cuid())
+  templateId    String
+  responsibleId String
+  unitId        String
+  sectorId      String
+  status        ChecklistExecutionStatus @default(PENDING)
+  dueDate       DateTime
+  executedAt    DateTime?
+  result        String?
+  observations  String?
+  template      ChecklistTemplate @relation(fields: [templateId], references: [id])
+  responsible   User @relation(fields: [responsibleId], references: [id])
+  unit          Unit @relation(fields: [unitId], references: [id])
+  sector        Sector @relation(fields: [sectorId], references: [id])
+  items         ChecklistExecutionItem[]
+}
+
+model ChecklistExecutionItem {
+  id           String @id @default(cuid())
+  executionId  String
+  templateItemId String
+  result       ChecklistItemResult
+  observation  String?
+  evidenceText String?
+  execution    ChecklistExecution @relation(fields: [executionId], references: [id])
+}
+
+model Ticket {
+  id            String @id @default(cuid())
+  number        String @unique
+  title         String
+  description   String
+  requester     String
+  sectorId      String
+  unitId        String
+  category      String
+  priority      Priority
+  status        TicketStatus @default(OPEN)
+  technicianId  String?
+  openedAt      DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  slaDeadline   DateTime
+  resolvedAt    DateTime?
+  sector        Sector @relation(fields: [sectorId], references: [id])
+  unit          Unit @relation(fields: [unitId], references: [id])
+  technician    User? @relation("TicketTechnician", fields: [technicianId], references: [id])
+  timeline      TicketTimeline[]
+}
+
+model TicketTimeline {
+  id         String @id @default(cuid())
+  ticketId   String
+  action     String
+  description String
+  createdAt  DateTime @default(now())
+  ticket     Ticket @relation(fields: [ticketId], references: [id])
+}
+
+model SlaPolicy {
+  id              String @id @default(cuid())
+  name            String
+  sectorId        String?
+  priority        Priority
+  firstResponseMin Int
+  resolutionMin   Int
+}
+
+model AuditLog {
+  id          String @id @default(cuid())
+  userId       String?
+  action       String
+  entity       String
+  entityId     String?
+  description  String
+  ip           String?
+  createdAt    DateTime @default(now())
+  user         User? @relation(fields: [userId], references: [id])
+}
+
+model ServiceStatus {
+  id          String @id @default(cuid())
+  name        String
+  category    String
+  status      AssetStatus
+  updatedAt   DateTime @updatedAt
+  histories   ServiceStatusHistory[]
+}
+
+model ServiceStatusHistory {
+  id          String @id @default(cuid())
+  serviceId   String
+  status      AssetStatus
+  summary     String
+  createdAt   DateTime @default(now())
+  service     ServiceStatus @relation(fields: [serviceId], references: [id])
+}
+
+model ReportExport {
+  id         String @id @default(cuid())
+  type       String
+  generatedBy String
+  generatedAt DateTime @default(now())
+  filePath   String?
+}
+
+model Notification {
+  id         String @id @default(cuid())
+  title      String
+  message    String
+  read       Boolean @default(false)
+  createdAt  DateTime @default(now())
+}
