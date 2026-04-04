@@ -24,10 +24,11 @@ Acesse:
 - Frontend: http://localhost:3000
 - Backend: http://localhost:3001
 
-Credenciais seed:
+Credenciais seed (somente para desenvolvimento local):
 - `admin@infracare.local`
 - `Infracare@123`
 
+> **Importante:** essas credenciais existem apenas para o ambiente local criado pelo seed. Não reutilize esses valores em homologação, produção ou qualquer deploy compartilhado. Em qualquer implantação, substitua imediatamente por credenciais/segredos próprios configurados via `.env`.
 ## Qualidade
 - `npm run lint`
 - `npm run test`
