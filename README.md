@@ -2,6 +2,9 @@
 
 Plataforma web para monitoramento, operação e governança de infraestrutura hospitalar.
 
+## Demo online
+- https://infra-care.vercel.app/
+
 ## Stack
 - Frontend: Next.js + TypeScript + Tailwind
 - Backend: NestJS + TypeScript + Prisma
