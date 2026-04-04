@@ -1,11 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/dashboard`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()).then(setData);
+    const token = localStorage.getItem('token') ?? undefined;
+    api('/dashboard', token).then(setData).catch(() => {});
   }, []);
   const metrics = data?.metrics || {};
   const cards = [

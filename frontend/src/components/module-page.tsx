@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
+import { api } from '@/lib/api';
 
 function Badge({ value }: { value: string }) {
   const color =
@@ -16,16 +17,8 @@ export function ModulePage({ title, endpoint }: { title: string; endpoint: strin
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${endpoint}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(async (r) => {
-        if (!r.ok) throw new Error('Falha ao carregar módulo');
-        return r.json();
-      })
-      .then(setData)
-      .catch((e) => setError(e.message));
+    const token = localStorage.getItem('token') ?? undefined;
+    api(endpoint, token).then(setData).catch((e: Error) => setError(e.message));
   }, [endpoint]);
 
   const rows = useMemo(() => (Array.isArray(data) ? data : data ? [data] : []), [data]);

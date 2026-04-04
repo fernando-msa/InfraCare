@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsIn, IsOptional, IsString, MinLength } from 'class-validator';
 import { JwtAuthGuard } from '../common/jwt-auth.guard';
 import { Roles } from '../common/roles.decorator';
 import { UsersService } from './users.service';
@@ -14,7 +14,7 @@ class CreateUserDto {
 
 class UpdateUserDto {
   @IsOptional() @IsString() name?: string;
-  @IsOptional() @IsString() status?: 'ACTIVE' | 'INACTIVE';
+  @IsOptional() @IsIn(['ACTIVE', 'INACTIVE']) status?: 'ACTIVE' | 'INACTIVE';
   @IsOptional() @IsString() roleId?: string;
   @IsOptional() @IsString() unitId?: string;
 }
