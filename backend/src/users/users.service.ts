@@ -7,7 +7,18 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   list() {
-    return this.prisma.user.findMany({ include: { role: true, unit: true } });
+    return this.prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        role: true,
+        unit: true,
+      },
+    });
   }
 
   findByEmail(email: string) {

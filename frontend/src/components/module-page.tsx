@@ -13,19 +13,20 @@ function Badge({ value }: { value: string }) {
 
 export function ModulePage({ title, endpoint }: { title: string; endpoint: string }) {
   const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${endpoint}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${endpoint}`, { headers })
       .then(async (r) => {
         if (!r.ok) throw new Error('Falha ao carregar módulo');
         return r.json();
       })
-      .then(setData)
-      .catch((e) => setError(e.message));
+      .then((json) => { setData(json); setLoading(false); })
+      .catch((e) => { setError(e.message); setLoading(false); });
   }, [endpoint]);
 
   const rows = useMemo(() => (Array.isArray(data) ? data : data ? [data] : []), [data]);
@@ -39,8 +40,10 @@ export function ModulePage({ title, endpoint }: { title: string; endpoint: strin
       <h3 className="text-xl font-semibold">{title}</h3>
       {error && <p className="text-crit">{error}</p>}
 
-      {!rows.length ? (
+      {loading ? (
         <div className="card text-sm text-slate-500">Carregando dados...</div>
+      ) : !rows.length ? (
+        <div className="card text-sm text-slate-500">Nenhum registro encontrado.</div>
       ) : (
         <div className="card overflow-auto">
           <table className="w-full text-sm">

@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/co
 import { JwtAuthGuard } from '../common/jwt-auth.guard';
 import { Roles } from '../common/roles.decorator';
 import { CompleteChecklistDto } from './dto/complete-checklist.dto';
+import { RespondItemDto } from './dto/respond-item.dto';
 import { ChecklistsService } from './checklists.service';
 
 @UseGuards(JwtAuthGuard)
@@ -19,7 +20,7 @@ export class ChecklistsController {
 
   @Roles('ADMIN', 'ANALYST', 'TECHNICIAN')
   @Post('items/respond')
-  respondItem(@Body() body: { executionId: string; templateItemId: string; result: 'COMPLIANT' | 'NON_COMPLIANT' | 'NOT_APPLICABLE'; observation?: string; evidenceText?: string }) {
+  respondItem(@Body() body: RespondItemDto) {
     return this.service.respondItem(body);
   }
 }

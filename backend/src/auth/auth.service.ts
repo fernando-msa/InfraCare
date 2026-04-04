@@ -5,7 +5,16 @@ import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AuthService {
+  /**
+   * Revoked refresh tokens tracked in memory.
+   * NOTE: This set is not shared across multiple instances and is cleared on restart.
+   * For production deployments, persist revoked JTIs in the database or a Redis cache
+   * with TTL equal to the refresh token lifetime.
+   */
   private revokedRefreshTokens = new Set<string>();
+
+  /** Maximum number of revoked tokens to hold in memory before clearing old entries. */
+  private readonly MAX_REVOKED_TOKENS = 10_000;
 
   constructor(private usersService: UsersService, private jwtService: JwtService) {}
 
@@ -44,7 +53,19 @@ export class AuthService {
   }
 
   logout(refreshToken?: string) {
-    if (refreshToken) this.revokedRefreshTokens.add(refreshToken);
+    if (refreshToken) {
+      // Evict the oldest 10 % of entries when the set is at capacity to prevent
+      // unbounded memory growth while amortising the eviction cost.
+      if (this.revokedRefreshTokens.size >= this.MAX_REVOKED_TOKENS) {
+        const evictCount = Math.ceil(this.MAX_REVOKED_TOKENS * 0.1);
+        const iter = this.revokedRefreshTokens.values();
+        for (let n = 0; n < evictCount; n++) {
+          const entry = iter.next().value;
+          if (entry !== undefined) this.revokedRefreshTokens.delete(entry);
+        }
+      }
+      this.revokedRefreshTokens.add(refreshToken);
+    }
     return { message: 'Logout realizado com sucesso' };
   }
 }
