@@ -32,6 +32,9 @@ Credenciais seed:
 - `npm run lint`
 - `npm run test`
 
+## Prontidão para produção
+- Consulte `docs/deploy-readiness.md` para o checklist de go-live e gaps de hospedagem.
+
 ## Estrutura
 - `/frontend` aplicação web
 - `/backend` API e regras de negócio
