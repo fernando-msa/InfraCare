@@ -10,9 +10,9 @@ export function CrudPage({ title, endpoint, fields }: { title: string; endpoint:
 
   async function load() {
     const token = localStorage.getItem('token');
-    const headers: Record<string, string> = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${endpoint}`, { headers });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${endpoint}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     const data = await res.json();
     setRows(Array.isArray(data) ? data : []);
   }
@@ -25,11 +25,9 @@ export function CrudPage({ title, endpoint, fields }: { title: string; endpoint:
     e.preventDefault();
     setError('');
     const token = localStorage.getItem('token');
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${endpoint}`, {
       method: 'POST',
-      headers,
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     });
     if (!res.ok) {

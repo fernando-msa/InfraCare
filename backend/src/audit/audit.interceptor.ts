@@ -2,17 +2,13 @@ import {
   CallHandler,
   ExecutionContext,
   Injectable,
-  Logger,
   NestInterceptor,
 } from '@nestjs/common';
-import { Observable, from } from 'rxjs';
-import { mergeMap, tap } from 'rxjs/operators';
+import { Observable, tap } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
-  private readonly logger = new Logger(AuditInterceptor.name);
-
   constructor(private prisma: PrismaService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
@@ -24,23 +20,18 @@ export class AuditInterceptor implements NestInterceptor {
     if (!shouldAudit || path.startsWith('/audit')) return next.handle();
 
     return next.handle().pipe(
-      mergeMap((responseBody) =>
-        from(
-          this.prisma.auditLog.create({
-            data: {
-              userId: user?.sub,
-              action: method,
-              entity: path,
-              entityId: body?.id || null,
-              description: `Ação ${method} executada em ${path}`,
-              ip,
-            },
-          }),
-        ).pipe(
-          tap({ error: (err) => this.logger.error('Audit log write failed', err) }),
-          mergeMap(() => [responseBody]),
-        ),
-      ),
+      tap(async () => {
+        await this.prisma.auditLog.create({
+          data: {
+            userId: user?.sub,
+            action: method,
+            entity: path,
+            entityId: body?.id || null,
+            description: `Ação ${method} executada em ${path}`,
+            ip,
+          },
+        });
+      }),
     );
   }
 }

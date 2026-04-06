@@ -7,10 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test"
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
-    "next": "15.5.14",
+    "next": "15.1.4",
     "react": "19.0.0",
     "react-dom": "19.0.0"
   },
