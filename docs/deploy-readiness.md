@@ -1,7 +1,7 @@
 # Prontidão de Deploy (Online/Hospedado)
 
 ## Escopo da revisão
-Revisão estática do monorepo (`backend`, `frontend`, `docker-compose`, `README`, `vercel.json`) com foco em gaps para produção.
+Revisão estática do monorepo (`backend`, `frontend`, `docker-compose.yml`, `README`, `vercel.json`) com foco em gaps para produção.
 
 ## Status geral
 **Não está pronto para produção sem ajustes.**
