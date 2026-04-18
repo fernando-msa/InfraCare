@@ -1,5 +1,4 @@
 {
-  "installCommand": "npm install -w frontend --include-workspace-root=false",
-  "buildCommand": "npm run build -w frontend",
-  "outputDirectory": "frontend/.next"
+  "installCommand": "npm install --prefix frontend --no-audit --no-fund",
+  "buildCommand": "npm run build --prefix frontend"
 }
