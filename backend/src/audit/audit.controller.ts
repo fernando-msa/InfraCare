@@ -10,5 +10,7 @@ export class AuditController {
 
   @Roles('ADMIN', 'ANALYST')
   @Get('logs')
-  list() { return this.service.list(); }
+  list() {
+    return this.service.list();
+  }
 }

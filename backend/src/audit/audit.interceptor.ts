@@ -5,15 +5,15 @@ import {
   Logger,
   NestInterceptor,
 } from '@nestjs/common';
-import { Observable, from } from 'rxjs';
-import { mergeMap, tap } from 'rxjs/operators';
-import { PrismaService } from '../prisma/prisma.service';
+import { Observable, tap } from 'rxjs';
+import { AuditService } from './audit.service';
+import { Row } from '../shared/demo-data';
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
   private readonly logger = new Logger(AuditInterceptor.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly auditService: AuditService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
@@ -24,23 +24,24 @@ export class AuditInterceptor implements NestInterceptor {
     if (!shouldAudit || path.startsWith('/audit')) return next.handle();
 
     return next.handle().pipe(
-      mergeMap((responseBody) =>
-        from(
-          this.prisma.auditLog.create({
-            data: {
-              userId: user?.sub,
-              action: method,
-              entity: path,
-              entityId: body?.id || null,
-              description: `Ação ${method} executada em ${path}`,
-              ip,
-            },
-          }),
-        ).pipe(
-          tap({ error: (err) => this.logger.error('Audit log write failed', err) }),
-          mergeMap(() => [responseBody]),
-        ),
-      ),
+      tap({
+        next: () => {
+          const entry: Row = {
+            id: `${method.toLowerCase()}-${Date.now()}`,
+            name: `${method} ${path}`,
+            status: 'INFO',
+            summary: `Ação executada por ${user?.email || 'usuário autenticado'}`,
+            updatedAt: new Date().toISOString(),
+            details: `ip=${ip}; entityId=${body?.id || 'n/a'}`,
+          };
+
+          try {
+            this.auditService.record(entry);
+          } catch (error) {
+            this.logger.error('Audit log write failed', error as Error);
+          }
+        },
+      }),
     );
   }
 }

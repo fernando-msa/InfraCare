@@ -1,5 +1,6 @@
 'use client';
 import { FormEvent, useEffect, useState } from 'react';
+import { ApiError } from '@/lib/api';
 
 type Field = { name: string; label: string; placeholder?: string };
 
@@ -13,6 +14,9 @@ export function CrudPage({ title, endpoint, fields }: { title: string; endpoint:
     const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${endpoint}`, { headers });
+    if (!res.ok) {
+      throw new ApiError(res.status, 'Falha ao carregar dados');
+    }
     const data = await res.json();
     setRows(Array.isArray(data) ? data : []);
   }
