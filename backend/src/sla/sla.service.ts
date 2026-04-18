@@ -1,17 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { slaPolicies } from '../shared/demo-data';
 
 @Injectable()
 export class SlaService {
-  constructor(private prisma: PrismaService) {}
-  async indicators() {
-    const tickets = await this.prisma.ticket.findMany();
-    const outside = tickets.filter((t) => t.slaDeadline < new Date() && t.status !== 'CLOSED' && t.status !== 'RESOLVED').length;
+  indicators() {
+    const total = slaPolicies.length;
+    const outside = slaPolicies.filter((policy) => policy.status === 'CRITICAL' || policy.status === 'WARN').length;
+
     return {
-      totalTickets: tickets.length,
-      insideSla: tickets.length - outside,
+      totalPolicies: total,
+      insideSla: total - outside,
       outsideSla: outside,
-      outsidePercentage: tickets.length ? Number(((outside / tickets.length) * 100).toFixed(2)) : 0,
+      outsidePercentage: total ? Number(((outside / total) * 100).toFixed(2)) : 0,
+      policies: [...slaPolicies],
     };
   }
 }

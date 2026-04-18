@@ -10,5 +10,7 @@ export class StatusController {
 
   @Roles('ADMIN', 'ANALYST', 'TECHNICIAN', 'MANAGER')
   @Get()
-  list() { return this.service.list(); }
+  list() {
+    return this.service.list();
+  }
 }

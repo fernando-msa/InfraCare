@@ -1,8 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Row, auditLogs } from '../shared/demo-data';
 
 @Injectable()
 export class AuditService {
-  constructor(private prisma: PrismaService) {}
-  list() { return this.prisma.auditLog.findMany({ include: { user: true }, orderBy: { createdAt: 'desc' } }); }
+  list(): Row[] {
+    return [...auditLogs];
+  }
+
+  record(entry: Row) {
+    auditLogs.unshift(entry);
+  }
 }

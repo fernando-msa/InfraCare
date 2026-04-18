@@ -1,50 +1,35 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { UsersService } from '../users/users.service';
+import { findUserByEmail, findUserById, sanitizeUser } from '../shared/demo-data';
 
 @Injectable()
 export class AuthService {
-  private revokedRefreshTokens = new Set<string>();
-
-  constructor(private usersService: UsersService, private jwtService: JwtService) {}
-
-  private createTokens(user: { id: string; email: string; role: { name: string } }) {
-    const payload = { sub: user.id, email: user.email, role: user.role.name };
-    return {
-      accessToken: this.jwtService.sign(payload, { expiresIn: '8h' }),
-      refreshToken: this.jwtService.sign(payload, { expiresIn: '7d' }),
-    };
-  }
+  constructor(private readonly jwtService: JwtService) {}
 
   async login(email: string, password: string) {
-    const user = await this.usersService.findByEmail(email);
-    if (!user) throw new UnauthorizedException('Credenciais inválidas');
+    const user = findUserByEmail(String(email || '').trim().toLowerCase());
+    if (!user) {
+      throw new UnauthorizedException('Credenciais inválidas');
+    }
 
-    const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) throw new UnauthorizedException('Credenciais inválidas');
+    const passwordMatches = await bcrypt.compare(password || '', user.passwordHash);
+    if (!passwordMatches) {
+      throw new UnauthorizedException('Credenciais inválidas');
+    }
 
-    const tokens = this.createTokens(user);
     return {
-      ...tokens,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role.name },
+      accessToken: await this.jwtService.signAsync({ sub: user.id, email: user.email, role: user.role, name: user.name }),
+      user: sanitizeUser(user),
     };
   }
 
-  async refresh(refreshToken: string) {
-    if (this.revokedRefreshTokens.has(refreshToken)) {
-      throw new UnauthorizedException('Sessão inválida');
+  me(userId: string) {
+    const user = findUserById(userId);
+    if (!user) {
+      throw new UnauthorizedException('Usuário não encontrado');
     }
 
-    const payload = await this.jwtService.verifyAsync<{ sub: string; email: string; role: string }>(refreshToken);
-    const user = await this.usersService.findByEmail(payload.email);
-    if (!user) throw new UnauthorizedException('Usuário não encontrado');
-
-    return this.createTokens(user);
-  }
-
-  logout(refreshToken?: string) {
-    if (refreshToken) this.revokedRefreshTokens.add(refreshToken);
-    return { message: 'Logout realizado com sucesso' };
+    return sanitizeUser(user);
   }
 }
