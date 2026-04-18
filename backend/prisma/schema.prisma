@@ -207,6 +207,7 @@ model ChecklistTemplate {
   category    String
   periodicity ChecklistPeriodicity
   items       ChecklistTemplateItem[]
+  executions  ChecklistExecution[]
 }
 
 model ChecklistTemplateItem {

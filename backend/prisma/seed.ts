@@ -1,5 +1,5 @@
 import { PrismaClient, RoleName, UserStatus, AssetStatus, Criticality, Severity, IncidentStatus, ChecklistPeriodicity, ChecklistExecutionStatus, ChecklistItemResult, Priority, TicketStatus } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
